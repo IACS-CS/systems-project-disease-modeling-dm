@@ -19,16 +19,19 @@ and not interacting with others in each round.
 */
 
 /**
- * Authors: 
- * 
- * What we are simulating:
- * 
- * What elements we have to add:
- * 
- * In plain language, what our model does:
- * 
- */
-
+ * Authors: Dev Patel
+ 
+ * What we are simulating: 
+ 
+ * What elements we have to add: 
+ * Recovery time: Implement a way for infected individuals to recover after a set number of rounds.
+ * Quarantine: Add a chance for infected individuals to be quarantined and thus not interact with others.
+ * Variable number of contacts: We can change the number of people interacting each round.
+ * Customizable infection chance: Adjust the infection spread probability based on user input.
+ 
+* In plain language, what our model does:
+ * In plain language, this model simulates the spread of a disease with added features like recovery, quarantine, and customizable infection probabilities. 
+*/
 
 
 export const defaultSimulationParameters = {
@@ -48,90 +51,90 @@ to add a property such as daysInfected which tracks how long they've been infect
 
 Similarily, if you wanted to track immunity, you would need a property that shows
 whether people are susceptible or immune (i.e. succeptibility or immunity) */
+
+
 export const createPopulation = (size = 1600) => {
   const population = [];
   const sideSize = Math.sqrt(size);
   for (let i = 0; i < size; i++) {
     population.push({
       id: i,
-      x: (100 * (i % sideSize)) / sideSize, // X-coordinate within 100 units
-      y: (100 * Math.floor(i / sideSize)) / sideSize, // Y-coordinate scaled similarly
+      x: (100 * (i % sideSize)) / sideSize,
+      y: (100 * Math.floor(i / sideSize)) / sideSize,
       infected: false,
+      quarantined: false,
+      recovered: false,
+      mindControlled: false,
+      infectionTime: 0,
     });
   }
-  // Infect patient zero...
   let patientZero = population[Math.floor(Math.random() * size)];
   patientZero.infected = true;
   return population;
 };
 
-// Example: Maybe infect a person (students should customize this)
 const updateIndividual = (person, contact, params) => {
-  // Add some logic to update the individual!
-  // For example...
+  if (person.quarantined || person.recovered) return;
+
   if (person.infected) {
-    // If they were already infected, they are no longer
-    // newly infected :)
-    person.newlyInfected = false;
+    person.infectionTime++;
+
+    // Mind-control phase before full transformation
+    if (person.infectionTime === params.mindControlTime) {
+      person.mindControlled = true;
+    }
+
+    // Recovery after set rounds
+    if (person.infectionTime >= params.recoveryTime) {
+      person.infected = false;
+      person.recovered = true;
+      person.mindControlled = false;
+    }
   }
-  if (contact.infected) {
-    if (Math.random() * 100 < params.infectionChance) {
-      if (!person.infected) {
-        person.newlyInfected = true;
-      }
+
+  // Spread infection if in contact with an infected person
+  if (contact.infected && !person.recovered && Math.random() * 100 < params.infectionChance) {
+    if (!person.infected) {
       person.infected = true;
+      person.infectionTime = 0;
+
+      // Chance to quarantine
+      if (Math.random() * 100 < params.quarantineChance) {
+        person.quarantined = true;
+      }
     }
   }
 };
 
-// Example: Update population (students decide what happens each turn)
 export const updatePopulation = (population, params) => {
-  // Include "shufflePopulation if you want to shuffle...
-  // population = shufflePopulation(population);
-  // Example logic... each person is in contact with the person next to them...
+  shufflePopulation(population);
   for (let i = 0; i < population.length; i++) {
     let p = population[i];
-    // This logic just grabs the next person in line -- you will want to 
-    // change this to fit your model! 
     let contact = population[(i + 1) % population.length];
-    // Update the individual based on the contact...
     updateIndividual(p, contact, params);
   }
   return population;
 };
 
-
-// Stats to track (students can add more)
-// Any stats you add here should be computed
-// by Compute Stats below
 export const trackedStats = [
   { label: "Total Infected", value: "infected" },
+  { label: "Total Quarantined", value: "quarantined" },
+  { label: "Total Recovered", value: "recovered" },
+  { label: "Mind-Controlled", value: "mindControlled" },
 ];
 
-// Example: Compute stats (students customize)
 export const computeStatistics = (population, round) => {
   let infected = 0;
+  let quarantined = 0;
+  let recovered = 0;
+  let mindControlled = 0;
+
   for (let p of population) {
-    if (p.infected) {
-      infected += 1; // Count the infected
-    }
+    if (p.infected) infected++;
+    if (p.quarantined) quarantined++;
+    if (p.recovered) recovered++;
+    if (p.mindControlled) mindControlled++;
   }
-  return { round, infected };
+
+  return { round, infected, quarantined, recovered, mindControlled };
 };
-
-
-// Example: Compute stats (students customize)
-export const computeStatistics = (population, round) => {
-  let infected = 0;
-  let newlyInfected = 0;
-  for (let p of population) {
-    if (p.infected) {
-      infected += 1; // Count the infected
-    }
-    if (p.newlyInfected) {
-      newlyInfected += 1; // Count the newly infected
-    }
-  }
-  return { round, infected, newlyInfected };
-};
-
