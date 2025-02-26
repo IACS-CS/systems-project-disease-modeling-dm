@@ -34,12 +34,7 @@ and not interacting with others in each round.
 */
 
 
-export const defaultSimulationParameters = {
-  infectionChance: 50,
-  // Add any new parameters you want here with their initial values
-  //  -- you will also have to add inputs into your jsx file if you want
-  // your user to be able to change these parameters.
-};
+
 
 /* Creates your initial population. By default, we *only* track whether people
 are infected. Any other attributes you want to track would have to be added
@@ -51,7 +46,6 @@ to add a property such as daysInfected which tracks how long they've been infect
 
 Similarily, if you wanted to track immunity, you would need a property that shows
 whether people are susceptible or immune (i.e. succeptibility or immunity) */
-
 
 export const createPopulation = (size = 1600) => {
   const population = [];
@@ -73,7 +67,7 @@ export const createPopulation = (size = 1600) => {
   return population;
 };
 
-const updateIndividual = (person, contact, params) => {
+const updateIndividual = (person, contact, params, totalInfected) => {
   if (person.quarantined || person.recovered) return;
 
   if (person.infected) {
@@ -90,6 +84,11 @@ const updateIndividual = (person, contact, params) => {
       person.recovered = true;
       person.mindControlled = false;
     }
+
+    // Increase quarantine rates as infections rise
+    if (totalInfected >= params.quarantineTrigger && Math.random() * 100 < params.quarantineChance) {
+      person.quarantined = true;
+    }
   }
 
   // Spread infection if in contact with an infected person
@@ -98,8 +97,8 @@ const updateIndividual = (person, contact, params) => {
       person.infected = true;
       person.infectionTime = 0;
 
-      // Chance to quarantine
-      if (Math.random() * 100 < params.quarantineChance) {
+      // Initial quarantine chance (before outbreak worsens)
+      if (Math.random() * 100 < params.initialQuarantineChance) {
         person.quarantined = true;
       }
     }
@@ -108,10 +107,14 @@ const updateIndividual = (person, contact, params) => {
 
 export const updatePopulation = (population, params) => {
   shufflePopulation(population);
+
+  // Calculate total infected before updating
+  let totalInfected = population.filter(p => p.infected).length;
+
   for (let i = 0; i < population.length; i++) {
     let p = population[i];
     let contact = population[(i + 1) % population.length];
-    updateIndividual(p, contact, params);
+    updateIndividual(p, contact, params, totalInfected);
   }
   return population;
 };
@@ -137,4 +140,13 @@ export const computeStatistics = (population, round) => {
   }
 
   return { round, infected, quarantined, recovered, mindControlled };
+};
+
+export const defaultSimulationParameters = {
+  infectionChance: 60, // % chance of getting infected on contact
+  initialQuarantineChance: 10, // % chance of quarantine when first infected
+  quarantineTrigger: 50, // Number of infected people before quarantine rates increase
+  quarantineChance: 30, // % chance of quarantine once threshold is hit
+  mindControlTime: 3, // Rounds before mind-controlled phase
+  recoveryTime: 200, // Rounds before full recovery
 };
