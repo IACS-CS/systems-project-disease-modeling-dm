@@ -22,16 +22,19 @@ and not interacting with others in each round.
  * Authors: Dev Patel
  
  * What we are simulating: 
+  * This simulation models the spread of a disease with recovery.
+
  
  * What elements we have to add: 
- * Recovery time: Implement a way for infected individuals to recover after a set number of rounds.
- * Quarantine: Add a chance for infected individuals to be quarantined and thus not interact with others.
- * Variable number of contacts: We can change the number of people interacting each round.
- * Customizable infection chance: Adjust the infection spread probability based on user input.
+  * - Recovery time: Infected individuals recover after a set number of rounds.
+ * - Variable number of contacts: People interact with others each round.
+ * - Customizable infection chance: Adjust the probability of infection.
+ 
  
 * In plain language, what our model does:
- * In plain language, this model simulates the spread of a disease with added features like recovery, quarantine, and customizable infection probabilities. 
-*/
+  * This model simulates disease spread in a population where people can become infected, interact with others, and recover after a set time.
+
+ */
 
 
 
@@ -56,9 +59,7 @@ export const createPopulation = (size = 1600) => {
       x: (100 * (i % sideSize)) / sideSize,
       y: (100 * Math.floor(i / sideSize)) / sideSize,
       infected: false,
-      quarantined: false,
       recovered: false,
-      mindControlled: false,
       infectionTime: 0,
     });
   }
@@ -67,86 +68,60 @@ export const createPopulation = (size = 1600) => {
   return population;
 };
 
-const updateIndividual = (person, contact, params, totalInfected) => {
-  if (person.quarantined || person.recovered) return;
+// Function to update the infection status of an individual
+const updateIndividual = (person, contact, params) => {
+  if (person.recovered) return;
 
   if (person.infected) {
     person.infectionTime++;
-
-    // Mind-control phase before full transformation
-    if (person.infectionTime === params.mindControlTime) {
-      person.mindControlled = true;
-    }
 
     // Recovery after set rounds
     if (person.infectionTime >= params.recoveryTime) {
       person.infected = false;
       person.recovered = true;
-      person.mindControlled = false;
-    }
-
-    // Increase quarantine rates as infections rise
-    if (totalInfected >= params.quarantineTrigger && Math.random() * 100 < params.quarantineChance) {
-      person.quarantined = true;
     }
   }
 
   // Spread infection if in contact with an infected person
   if (contact.infected && !person.recovered && Math.random() * 100 < params.infectionChance) {
-    if (!person.infected) {
-      person.infected = true;
-      person.infectionTime = 0;
-
-      // Initial quarantine chance (before outbreak worsens)
-      if (Math.random() * 100 < params.initialQuarantineChance) {
-        person.quarantined = true;
-      }
-    }
+    person.infected = true;
+    person.infectionTime = 0;
   }
 };
 
+// Update the population each round
 export const updatePopulation = (population, params) => {
   shufflePopulation(population);
 
-  // Calculate total infected before updating
-  let totalInfected = population.filter(p => p.infected).length;
-
   for (let i = 0; i < population.length; i++) {
     let p = population[i];
-    let contact = population[(i + 1) % population.length];
-    updateIndividual(p, contact, params, totalInfected);
+    let contact = population[(i + 1) % population.length]; // Contact with next person
+    updateIndividual(p, contact, params);
   }
   return population;
 };
 
+// Track only Total Infected and Total Recovered
 export const trackedStats = [
   { label: "Total Infected", value: "infected" },
-  { label: "Total Quarantined", value: "quarantined" },
   { label: "Total Recovered", value: "recovered" },
-  { label: "Mind-Controlled", value: "mindControlled" },
 ];
 
+// Compute statistics for visualization
 export const computeStatistics = (population, round) => {
   let infected = 0;
-  let quarantined = 0;
   let recovered = 0;
-  let mindControlled = 0;
 
   for (let p of population) {
     if (p.infected) infected++;
-    if (p.quarantined) quarantined++;
     if (p.recovered) recovered++;
-    if (p.mindControlled) mindControlled++;
   }
 
-  return { round, infected, quarantined, recovered, mindControlled };
+  return { round, infected, recovered };
 };
 
+// Default simulation parameters
 export const defaultSimulationParameters = {
   infectionChance: 60, // % chance of getting infected on contact
-  initialQuarantineChance: 10, // % chance of quarantine when first infected
-  quarantineTrigger: 50, // Number of infected people before quarantine rates increase
-  quarantineChance: 30, // % chance of quarantine once threshold is hit
-  mindControlTime: 3, // Rounds before mind-controlled phase
   recoveryTime: 200, // Rounds before full recovery
 };
