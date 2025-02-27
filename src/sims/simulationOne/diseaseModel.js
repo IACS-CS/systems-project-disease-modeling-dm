@@ -50,6 +50,19 @@ to add a property such as daysInfected which tracks how long they've been infect
 Similarily, if you wanted to track immunity, you would need a property that shows
 whether people are susceptible or immune (i.e. succeptibility or immunity) */
 
+// Default simulation parameters
+export const defaultSimulationParameters = {
+  infectionChance: 50,
+  recoveryChance: 5, // Chance of recovery per round
+};
+
+// List of attributes we show on data table / graph
+export const trackedStats = [
+  { label: "Total Infected", value: "infected" },
+  { label: "Total Recovered", value: "recovered" },
+];
+
+// Create the population with default attributes
 export const createPopulation = (size = 1600) => {
   const population = [];
   const sideSize = Math.sqrt(size);
@@ -59,55 +72,70 @@ export const createPopulation = (size = 1600) => {
       x: (100 * (i % sideSize)) / sideSize,
       y: (100 * Math.floor(i / sideSize)) / sideSize,
       infected: false,
-      recovered: false,
-      infectionTime: 0,
+      recovered: false, // Tracks if the person has recovered
     });
   }
+  // Infect patient zero...
   let patientZero = population[Math.floor(Math.random() * size)];
   patientZero.infected = true;
   return population;
 };
 
-// Function to update the infection status of an individual
-const updateIndividual = (person, contact, params) => {
-  if (person.recovered) return;
-
-  if (person.infected) {
-    person.infectionTime++;
-
-    // Recovery after set rounds
-    if (person.infectionTime >= params.recoveryTime) {
-      person.infected = false;
-      person.recovered = true;
-    }
-  }
-
-  // Spread infection if in contact with an infected person
-  if (contact.infected && !person.recovered && Math.random() * 100 < params.infectionChance) {
+// Function to potentially infect a person
+const maybeInfectPerson = (person, params) => {
+  if (Math.random() * 100 < params.infectionChance && !person.infected && !person.recovered) {
     person.infected = true;
-    person.infectionTime = 0;
+  }
+};
+
+// Function to potentially recover a person
+const maybeRecoverPerson = (person, params) => {
+  if (Math.random() * 100 < params.recoveryChance && person.infected) {
+    person.infected = false;
+    person.recovered = true;
   }
 };
 
 // Update the population each round
 export const updatePopulation = (population, params) => {
-  shufflePopulation(population);
+  const shuffledPopulation = shufflePopulation(population);
 
-  for (let i = 0; i < population.length; i++) {
-    let p = population[i];
-    let contact = population[(i + 1) % population.length]; // Contact with next person
-    updateIndividual(p, contact, params);
+  // Pair up individuals for interaction
+  for (let i = 0; i < shuffledPopulation.length - 1; i += 2) {
+    let personA = shuffledPopulation[i];
+    let personB = shuffledPopulation[i + 1];
+
+    // Adjust positioning to simulate movement
+    if (personA.x < 1) personA.x += Math.ceil(Math.random() * 5);
+    if (personA.x > 99) personA.x -= Math.ceil(Math.random() * 5);
+    personA.x -= 1;
+    personB.x = personA.x + 2;
+    personB.y = personA.y;
+
+    // Track partners for future interactions
+    personA.partner = personB;
+    personB.partner = personA;
+
+    // Check if they infect each other
+    if (personA.infected && !personB.infected) maybeInfectPerson(personB, params);
+    if (personB.infected && !personA.infected) maybeInfectPerson(personA, params);
   }
+
+  // Attempt recovery for all infected individuals
+  for (let p of population) {
+    if (p.infected) maybeRecoverPerson(p, params);
+  }
+
   return population;
 };
 
-// Track only Total Infected and Total Recovered
-export const trackedStats = [
-  { label: "Total Infected", value: "infected" },
-  { label: "Total Recovered", value: "recovered" },
-];
-
-// Compute statistics for visualization
+/**
+ * Computes statistics for the current round of the simulation.
+ *
+ * @param {Array} population - The array representing the population.
+ * @param {number} round - The current round number.
+ * @returns {Object} Statistics including total infected and recovered individuals.
+ */
 export const computeStatistics = (population, round) => {
   let infected = 0;
   let recovered = 0;
@@ -118,10 +146,4 @@ export const computeStatistics = (population, round) => {
   }
 
   return { round, infected, recovered };
-};
-
-// Default simulation parameters
-export const defaultSimulationParameters = {
-  infectionChance: 60, // % chance of getting infected on contact
-  recoveryTime: 200, // Rounds before full recovery
 };
