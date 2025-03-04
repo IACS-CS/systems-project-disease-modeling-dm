@@ -60,11 +60,14 @@ to add a property such as daysInfected which tracks how long they've been infect
 Similarily, if you wanted to track immunity, you would need a property that shows
 whether people are susceptible or immune (i.e. succeptibility or immunity) */
 // Default simulation parameters
+
+
+// Default simulation parameters
 export const defaultSimulationParameters = {
-  infectionChance: 50, // Probability of infection upon contact
+  infectionChance: 55, // Probability of infection upon contact
   asymptomaticRate: 20, // Percentage of population that is asymptomatic
-  recoveryTime: 5, // Days before an infected person recovers
-  deathRate: 4, // Percentage of infected individuals who die instead of recovering
+  recoveryTime: 30, // Days before an infected person recovers
+  deathRate: 5, // Percentage of infected individuals who die instead of recovering
 };
 
 // Attributes tracked for data visualization
@@ -89,7 +92,7 @@ export const createPopulation = (size = 1600) => {
       daysInfected: 0,
       recovered: false,
       dead: false,
-      asymptomatic: Math.random() * 100 < defaultSimulationParameters.asymptomaticRate,
+      asymptomatic: Math.random() * 100 < defaultSimulationParameters.asymptomaticRate, // Asymptomatic rate
     });
   }
 
@@ -112,20 +115,17 @@ const maybeInfectPerson = (person, params) => {
 
 // Update the population each round
 export const updatePopulation = (population, params) => {
+  // Reset new infection flags
   for (let p of population) {
     p.newlyInfected = false;
   }
 
   const shuffledPopulation = shufflePopulation(population);
 
+  // Simulate interactions and infections
   for (let i = 0; i < shuffledPopulation.length - 1; i += 2) {
     let personA = shuffledPopulation[i];
     let personB = shuffledPopulation[i + 1];
-
-    // Adjust movement and interactions
-    personA.x += Math.random() < 0.5 ? -1 : 1;
-    personB.x = personA.x + 2;
-    personB.y = personA.y;
 
     // Check for infection spread
     if (personA.infected && !personB.infected) {
@@ -140,6 +140,8 @@ export const updatePopulation = (population, params) => {
   for (let p of population) {
     if (p.infected) {
       p.daysInfected++;
+
+      // If infected for the specified recovery time, either recover or die
       if (p.daysInfected >= params.recoveryTime) {
         if (Math.random() * 100 < params.deathRate) {
           p.dead = true;
@@ -170,3 +172,32 @@ export const computeStatistics = (population, round) => {
 
   return { round, infected, newlyInfected, deaths, recovered };
 };
+
+// Start the simulation
+export const startSimulation = (population) => {
+  let round = 0;
+
+  // Set an interval to update the population and calculate statistics periodically
+  const interval = setInterval(() => {
+    round++;
+
+    // Update population for each round
+    population = updatePopulation(population, defaultSimulationParameters);
+
+    // Compute current statistics
+    const stats = computeStatistics(population, round);
+
+    // Log stats or display them in your UI
+    console.log(`Round: ${round}`, stats);
+
+    // Optionally, stop the simulation after a certain condition (e.g., no more infections)
+    if (stats.infected === 0) {
+      console.log('Simulation ended, no more infections.');
+      clearInterval(interval);
+    }
+  }, 1000); // Update every second (1000ms)
+};
+
+// Example usage:
+const population = createPopulation();
+startSimulation(population);
