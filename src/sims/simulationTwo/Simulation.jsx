@@ -90,6 +90,13 @@ const Simulation = () => {
     setDiseaseData([]);
   };
 
+  const handleSliderChange = (param, value) => {
+    setSimulationParameters((prevParams) => ({
+      ...prevParams,
+      [param]: value,
+    }));
+  };
+
   return (
     <div>
       <section className="top">
@@ -102,27 +109,72 @@ const Simulation = () => {
         <button onClick={() => setAutoMode(true)}>AutoRun</button>
         <button onClick={() => setAutoMode(false)}>Stop</button>
         <button onClick={resetSimulation}>Reset Simulation</button>
-        <div>
+      </section>
+
+      <section className="simulation-parameters">
+        <h2>Simulation Parameters</h2>
+        <div className="parameter-slider">
           <label>
-            Population:
-            <div className="vertical-stack">
-              <input
-                type="range"
-                min="3"
-                max="1000"
-                value={popSize}
-                onChange={(e) => setPopSize(parseInt(e.target.value))}
-              />
-              <input
-                type="number"
-                value={Math.round(popSize * popSize)}
-                step="10"
-                onChange={(e) => setPopSize(Math.sqrt(parseInt(e.target.value)))}
-              />
-            </div>
+            Infection Chance: {simulationParameters.infectionChance}%
+            <input
+              type="range"
+              min="0"
+              max="100"
+              value={simulationParameters.infectionChance}
+              onChange={(e) => handleSliderChange("infectionChance", e.target.value)}
+            />
+          </label>
+        </div>
+        <div className="parameter-slider">
+          <label>
+            Asymptomatic Rate: {simulationParameters.asymptomaticRate}%
+            <input
+              type="range"
+              min="0"
+              max="100"
+              value={simulationParameters.asymptomaticRate}
+              onChange={(e) => handleSliderChange("asymptomaticRate", e.target.value)}
+            />
+          </label>
+        </div>
+        <div className="parameter-slider">
+          <label>
+            Recovery Time: {simulationParameters.recoveryTime} days
+            <input
+              type="range"
+              min="1"
+              max="30"
+              value={simulationParameters.recoveryTime}
+              onChange={(e) => handleSliderChange("recoveryTime", e.target.value)}
+            />
+          </label>
+        </div>
+        <div className="parameter-slider">
+          <label>
+            Death Rate: {simulationParameters.deathRate}%
+            <input
+              type="range"
+              min="0"
+              max="100"
+              value={simulationParameters.deathRate}
+              onChange={(e) => handleSliderChange("deathRate", e.target.value)}
+            />
+          </label>
+        </div>
+        <div className="parameter-slider">
+          <label>
+            Max Proximity: {simulationParameters.maxProximity}%
+            <input
+              type="range"
+              min="1"
+              max="100"
+              value={simulationParameters.maxProximity}
+              onChange={(e) => handleSliderChange("maxProximity", e.target.value)}
+            />
           </label>
         </div>
       </section>
+
       <section className="side-by-side">
         {renderChart(diseaseData, lineToGraph, setLineToGraph, trackedStats)}
         <div className="world">
