@@ -61,13 +61,14 @@ Similarily, if you wanted to track immunity, you would need a property that show
 whether people are susceptible or immune (i.e. succeptibility or immunity) */
 // Default simulation parameters
 
-
-// Default simulation parameters
+// Default COVID-19 simulation parameters
 export const defaultSimulationParameters = {
-  infectionChance: 55, // Probability of infection upon contact
-  asymptomaticRate: 20, // Percentage of population that is asymptomatic
-  recoveryTime: 30, // Days before an infected person recovers
-  deathRate: 5, // Percentage of infected individuals who die instead of recovering
+  infectionChance: 60, // Average probability of infection upon contact (COVID-19 is more transmissible than many diseases)
+  asymptomaticRate: 30, // Percentage of population that is asymptomatic (higher in COVID-19)
+  recoveryTime: 14, // Days before an infected person recovers (typically 14 days)
+  deathRate: 2, // Death rate for COVID-19 (2% globally on average)
+  incubationPeriod: 5, // Average incubation period before symptoms appear (COVID-19 has a 2-14 day range)
+  maxProximity: 10, // Max distance at which people can interact (in percentage of grid size)
 };
 
 // Attributes tracked for data visualization
@@ -76,13 +77,14 @@ export const trackedStats = [
   { label: "New Infections", value: "newlyInfected" },
   { label: "Total Deaths", value: "deaths" },
   { label: "Total Recovered", value: "recovered" },
+  { label: "Total Asymptomatic", value: "asymptomatic" },
 ];
 
 // Initialize the population
 export const createPopulation = (size = 1600) => {
   const population = [];
   const sideSize = Math.sqrt(size);
-  
+
   for (let i = 0; i < size; i++) {
     population.push({
       id: i,
@@ -93,6 +95,7 @@ export const createPopulation = (size = 1600) => {
       recovered: false,
       dead: false,
       asymptomatic: Math.random() * 100 < defaultSimulationParameters.asymptomaticRate, // Asymptomatic rate
+      incubationPeriod: Math.floor(Math.random() * 5) + 5, // Incubation period (5-9 days)
     });
   }
 
@@ -109,8 +112,14 @@ const maybeInfectPerson = (person, params) => {
       person.infected = true;
       person.newlyInfected = true;
       person.daysInfected = 0;
+      person.incubationPeriod = Math.floor(Math.random() * 5) + params.incubationPeriod; // Reset incubation period
     }
   }
+};
+
+// Calculate distance between two individuals
+const calculateDistance = (personA, personB) => {
+  return Math.sqrt(Math.pow(personA.x - personB.x, 2) + Math.pow(personA.y - personB.y, 2));
 };
 
 // Update the population each round
@@ -122,17 +131,24 @@ export const updatePopulation = (population, params) => {
 
   const shuffledPopulation = shufflePopulation(population);
 
-  // Simulate interactions and infections
-  for (let i = 0; i < shuffledPopulation.length - 1; i += 2) {
+  // Simulate interactions and infections based on proximity
+  for (let i = 0; i < shuffledPopulation.length - 1; i++) {
     let personA = shuffledPopulation[i];
-    let personB = shuffledPopulation[i + 1];
 
-    // Check for infection spread
-    if (personA.infected && !personB.infected) {
-      maybeInfectPerson(personB, params);
-    }
-    if (personB.infected && !personA.infected) {
-      maybeInfectPerson(personA, params);
+    for (let j = i + 1; j < shuffledPopulation.length; j++) {
+      let personB = shuffledPopulation[j];
+      const distance = calculateDistance(personA, personB);
+
+      // Only consider infection if they are close enough
+      if (distance < params.maxProximity) {
+        // Check for infection spread
+        if (personA.infected && !personB.infected && personA.daysInfected >= personA.incubationPeriod) {
+          maybeInfectPerson(personB, params);
+        }
+        if (personB.infected && !personA.infected && personB.daysInfected >= personB.incubationPeriod) {
+          maybeInfectPerson(personA, params);
+        }
+      }
     }
   }
 
@@ -162,15 +178,17 @@ export const computeStatistics = (population, round) => {
   let newlyInfected = 0;
   let deaths = 0;
   let recovered = 0;
+  let asymptomatic = 0;
 
   for (let p of population) {
     if (p.infected) infected++;
     if (p.newlyInfected) newlyInfected++;
     if (p.dead) deaths++;
     if (p.recovered) recovered++;
+    if (p.asymptomatic) asymptomatic++;
   }
 
-  return { round, infected, newlyInfected, deaths, recovered };
+  return { round, infected, newlyInfected, deaths, recovered, asymptomatic };
 };
 
 // Start the simulation
