@@ -1,44 +1,34 @@
 import { shufflePopulation } from "../../lib/shufflePopulation";
 
-/* Update this code to simulate a simple disease model! */
-
-/* For this simulation, you should model a *real world disease* based on some real information about it.
-*
-* Options are:
-* - Mononucleosis, which has an extremely long incubation period.
-*
-* - The flu: an ideal model for modeling vaccination. The flu evolves each season, so you can model
-    a new "season" of the flu by modeling what percentage of the population gets vaccinated and how
-    effective the vaccine is.
-* 
-* - An emerging pandemic: you can model a new disease (like COVID-19) which has a high infection rate.
-*    Try to model the effects of an intervention like social distancing on the spread of the disease.
-*    You can model the effects of subclinical infections (people who are infected but don't show symptoms)
-*    by having a percentage of the population be asymptomatic carriers on the spread of the disease.
-*
-* - Malaria: a disease spread by a vector (mosquitoes). You can model the effects of the mosquito population
-    (perhaps having it vary seasonally) on the spread of the disease, or attempt to model the effects of
-    interventions like bed nets or insecticides.
-*
-* For whatever illness you choose, you should include at least one citation showing what you are simulating
-* is based on real world data about a disease or a real-world intervention.
-*/
+// ChatGPT helped me with setting up the disease simulation parameters, creating a population with infection statuses and other characteristics, implementing the logic for infection spread based on proximity, and tracking key statistics like total infections, recoveries, and deaths for data visualization and some comments.
 
 /**
- * Authors: 
+ * Authors:  Dev Patel 
  * 
  * What we are simulating:
- * 
+ * We are simulating the spread of COVID-19 through a population, including the transmission of the disease, the incubation period, the possibility of asymptomatic individuals, and the outcomes of recovery or death.
+
  * What we are attempting to model from the real world:
- * 
+  * We aim to model the spread of a highly transmissible virus (such as COVID-19) in a population, including factors like infection rates, incubation periods, asymptomatic carriers, recovery times, and death rates. We also model social proximity and the interaction between individuals that can influence the spread of the virus.
+
  * What we are leaving out of our model:
- * 
+  * We are leaving out more complex elements like vaccination rates, mutations or variants of the virus, public health interventions (e.g., social distancing, mask-wearing), and government policies (e.g., lockdowns). The model does not simulate regional differences, age-related susceptibility, or population density.
+
  * What elements we have to add:
- * 
+  * To improve this simulation, we could add vaccination rates, variants of the virus (with different transmission rates), and public health interventions. We could also introduce more granular demographic information such as age groups or risk factors, as well as track immunity after recovery or vaccination.
+
  * What parameters we will allow users to "tweak" to adjust the model:
- * 
+ * - Infection chance: The probability that an uninfected person becomes infected when interacting with an infected person.
+ * - Asymptomatic rate: The percentage of the population that carries the disease without showing symptoms but still can spread it.
+ * - Recovery time: The number of days it takes for an infected person to recover.
+ * - Death rate: The percentage of infected individuals who die due to the disease.
+ * - Incubation period: The number of days before an infected person shows symptoms.
+ * - Population size: The number of people in the simulation.
+ * - Max proximity: The maximum distance within which people can interact and transmit the disease.
+ 
  * In plain language, what our model does:
- * 
+ * Our model simulates the spread of COVID-19 in a population over time, tracking infections, recoveries, and deaths. The model uses random interactions between individuals, considering proximity, infection chances, incubation periods, and recovery/death outcomes. The model tracks how many people are infected, how many recover, how many die, and how many are asymptomatic. It visualizes the impact of various parameters like infection rate, recovery time, and death rate.
+
  */
 
 
