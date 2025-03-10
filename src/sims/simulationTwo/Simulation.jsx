@@ -61,12 +61,18 @@ const renderPatients = (population) => {
 };
 
 const Simulation = () => {
-  const [popSize, setPopSize] = useState(20);
+  const [popSize, setPopSize] = useState(20); // Initial population size
   const [population, setPopulation] = useState(createPopulation(popSize * popSize));
   const [diseaseData, setDiseaseData] = useState([]);
   const [lineToGraph, setLineToGraph] = useState("infected");
   const [autoMode, setAutoMode] = useState(false);
   const [simulationParameters, setSimulationParameters] = useState(defaultSimulationParameters);
+
+  useEffect(() => {
+    const newPopulation = createPopulation(popSize * popSize);
+    setPopulation(newPopulation);
+    setDiseaseData([]);
+  }, [popSize]); // Re-run when population size changes
 
   useEffect(() => {
     if (autoMode) {
@@ -100,8 +106,8 @@ const Simulation = () => {
   return (
     <div>
       <section className="top">
-        <h1>Rabies Simulation</h1>
-        <p>Adjust parameters and observe the spread of rabies in a population.</p>
+        <h1>Covid-19 Simulation</h1>
+        <p>Adjust parameters and observe the spread of covid-19 in a population.</p>
         <p>
           Population: {population.length}. Infected: {population.filter((p) => p.infected).length}. Deaths: {population.filter((p) => p.dead).length}
         </p>
@@ -113,6 +119,18 @@ const Simulation = () => {
 
       <section className="simulation-parameters">
         <h2>Simulation Parameters</h2>
+        <div className="parameter-slider">
+          <label>
+            Population Size: {popSize}
+            <input
+              type="range"
+              min="1"
+              max="50"
+              value={popSize}
+              onChange={(e) => setPopSize(Number(e.target.value))}
+            />
+          </label>
+        </div>
         <div className="parameter-slider">
           <label>
             Infection Chance: {simulationParameters.infectionChance}%
