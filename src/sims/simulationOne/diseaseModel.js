@@ -1,4 +1,6 @@
 import { shufflePopulation } from "../../lib/shufflePopulation";
+// ChatGPT helped me with setting up the disease simulation parameters, creating a population anf halping me wit the recoverd people. and helped me with the emojie moving thign and made the correct number so run the simulation better. 
+
 
 /* Update this code to simulate a simple disease model! */
 
